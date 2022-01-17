@@ -38,19 +38,26 @@ struct TGame {
 
 };
 
+void startGame(TGame& game);
+
 void printLegend(TGame & game){
     if (game.mode != GM_HARD) {
-        cout << " 7 | 8 | 9 " << endl;
-        cout << "-----------" << endl;
-        cout << " 4 | 5 | 6 " << endl;
-        cout << "-----------" << endl;
-        cout << " 1 | 2 | 3 " << endl;
+        cout << endl;
+        cout << "  7 | 8 | 9 " << endl;
+        cout << " -----------" << endl;
+        cout << "  4 | 5 | 6 " << endl;
+        cout << " -----------" << endl;
+        cout << "  1 | 2 | 3 " << endl;
         cout << endl;
     }
 }
 
+
+
 void printField(TGame & game) {
+    cout << endl;
     for (int y = FIELD_SIZE-1; y > -1; y--){
+        cout << " ";
         for (size_t x = 0; x < FIELD_SIZE; x++){
             cout << " " << game.ppField[y][x];
             if (x < FIELD_SIZE - 1) {
@@ -58,7 +65,7 @@ void printField(TGame & game) {
             }
         }
         if (y > 0) {
-            cout << endl << "-----------" << endl;
+            cout << endl << " -----------" << endl;
         }
     }
     cout << endl;
@@ -66,14 +73,14 @@ void printField(TGame & game) {
 }
 void selectFirst(TGame& game) {
     srand(time(NULL));
-    if (rand() % 2) {           // 1
-        game.signAI = CROSS;
-        game.signHuman = ZERO;
+    if (rand() % 2 == 0) {           // 1
+        game.signAI = ZERO;
+        game.signHuman = CROSS;
         game.step = 0;
     }
     else {                      // 0
-        game.signAI = ZERO;
-        game.signHuman = CROSS;
+        game.signAI = CROSS;
+        game.signHuman = ZERO;
         game.step = 1;
     }
 }
@@ -135,45 +142,88 @@ void humanTurn(TGame& game) {
         game.step++;
     }
 }
-void computerTurn(TGame& game){
+int computerTurn(TGame& game){
     system("cls");
     printField(game);
     game.step++;
+    srand(time(NULL));
+
+    if (game.mode >= GM_EASY){
+        //Center
+        if (game.ppField[(FIELD_SIZE / 2)][(FIELD_SIZE / 2)] == EMPTY) {
+            game.ppField[(FIELD_SIZE / 2)][(FIELD_SIZE / 2)] = game.signAI;
+            return 0;
+        }
+
+        //Check corners
+        if (game.ppField[0][0] == EMPTY && game.ppField[FIELD_SIZE - 1][FIELD_SIZE - 1] == EMPTY) {
+            ((rand() & 2) == 0) ? game.ppField[0][0] = game.signAI : game.ppField[FIELD_SIZE - 1][FIELD_SIZE - 1] = game.signAI;
+            return 0;
+        }
+        if (game.ppField[FIELD_SIZE - 1][0] == EMPTY && game.ppField[0][FIELD_SIZE - 1] == EMPTY) {
+            ((rand() & 2) == 0) ? game.ppField[FIELD_SIZE - 1][0] = game.signAI : game.ppField[0][FIELD_SIZE - 1] = game.signAI;
+            return 0;
+        }
+
+        //check non-corners
+        int rand_y = rand() % (FIELD_SIZE -1);
+        int rand_x = rand() % (FIELD_SIZE -1);
+        while (game.ppField[rand_y][rand_x] != EMPTY) {
+            rand_y = rand() % (FIELD_SIZE);
+            rand_x = rand() % (FIELD_SIZE);
+        }
+        game.ppField[rand_y][rand_x] = game.signAI;
+        return 0;
+    }
 }
+
 int checkStatus(TGame& game) {
-    
+    int counterHuman = 0;
+    int counterAI = 0;
     // check string for winner
-    for (size_t y = 0; y < FIELD_SIZE; y++){        
-        for (size_t x = 0; x < FIELD_SIZE - 1; x++){
-            if (game.ppField[y][x] == game.ppField[y][x + 1] ){
-                if (x == FIELD_SIZE - 2 && game.ppField[y][x] == game.signAI) {
+    for (size_t y = 0; y < FIELD_SIZE; y++){      
+        counterHuman = 0;
+        counterAI = 0;
+        for (size_t x = 0; x < FIELD_SIZE; x++){
+            if (game.ppField[y][x]!= EMPTY && game.ppField[y][0] == game.ppField[y][x] ){
+                if (game.ppField[y][x] == game.signAI) {
+                    counterAI++;
+                }
+                else {
+                    counterHuman++;
+                }
+                if (counterAI == FIELD_SIZE && game.ppField[y][x] == game.signAI) {
                     game.status = AI_WON;
                     return game.status;
                 }
-                else if (x == FIELD_SIZE - 2 && game.ppField[y][x] == game.signHuman) {
+                else if (counterHuman == FIELD_SIZE && game.ppField[y][x] == game.signHuman) {
                     game.status = PAYER_WON;
                     return game.status;
                 }
             }
-            
-            
         }
-           
     }
 
     //check column for winner
     for (size_t x = 0; x < FIELD_SIZE; x++)
     {
-        for (size_t y = 0; y < FIELD_SIZE - 1; y++) {
-            if (game.ppField[y][x] == game.ppField[y+1][x]) {
-                if (y == FIELD_SIZE - 2 && game.ppField[y][x] == game.signAI) {
+        counterHuman = 0;
+        counterAI = 0;
+        for (size_t y = 0; y < FIELD_SIZE; y++) {
+            
+            if (game.ppField[y][x] != EMPTY && game.ppField[0][x] == game.ppField[y][x]) {
+                if (game.ppField[y][x] == game.signAI) {
+                    counterAI++;
+                }
+                else {
+                    counterHuman++;
+                }
+                if (counterAI == FIELD_SIZE && game.ppField[y][x] == game.signAI) {
                     game.status = AI_WON;
-                    cout << "AI Won!!" << endl;
                     return game.status;
                 }
-                else if (y == FIELD_SIZE - 2 && game.ppField[y][x] == game.signHuman) {
+                else if (counterHuman == FIELD_SIZE && game.ppField[y][x] == game.signHuman) {
                     game.status = PAYER_WON;
-                    cout << "You Won!" << endl;
                     return game.status;;
                 }
             }
@@ -182,17 +232,23 @@ int checkStatus(TGame& game) {
 
     //check diagonals for winner
     //simple diagonal
-    for (size_t xy = 0; xy < FIELD_SIZE - 1; xy++)
+    counterHuman = 0;
+    counterAI = 0;
+    for (size_t xy = 0; xy < FIELD_SIZE; xy++)
     {
-        if (game.ppField[xy][xy] == game.ppField[xy + 1][xy + 1]) {
-            if (xy == FIELD_SIZE - 2 && game.ppField[xy][xy] == game.signAI) {
+        if (game.ppField[xy][xy] != EMPTY && game.ppField[0][0] == game.ppField[xy][xy]) {
+            if (game.ppField[xy][xy] == game.signAI) {
+                counterAI++;
+            }
+            else {
+                counterHuman++;
+            }
+            if (counterAI == FIELD_SIZE && game.ppField[xy][xy] == game.signAI) {
                 game.status = AI_WON;
-                //cout << "AI Won!!" << endl;
                 return game.status;
             }
-            else if (xy == FIELD_SIZE - 2 && game.ppField[xy][xy] == game.signHuman) {
+            else if (counterHuman == FIELD_SIZE && game.ppField[xy][xy] == game.signHuman) {
                 game.status = PAYER_WON;
-                //cout << "You Won!" << endl;
                 return game.status;;
             }
         }
@@ -200,25 +256,33 @@ int checkStatus(TGame& game) {
     }
 
     //not simple diagonal
-    for (size_t x = 0; x < FIELD_SIZE - 1; x++)
+    counterAI = 0;
+    counterHuman = 0;
+    for (size_t x = 0; x < FIELD_SIZE; x++)
     {
         size_t y = FIELD_SIZE - x - 1;
-        if (game.ppField[y][x] == game.ppField[y - 1][x + 1]) {
-            if (x == FIELD_SIZE - 2 && game.ppField[y][x] == game.signAI) {
+        if (game.ppField[y][x] != EMPTY && game.ppField[FIELD_SIZE - 1][0] == game.ppField[y][x]) {
+            if (game.ppField[y][x] == game.signAI) {
+                counterAI++;
+            }
+            else {
+                counterHuman++;
+            }
+            if (counterAI == FIELD_SIZE && game.ppField[y][x] == game.signAI) {
                 game.status = AI_WON;
-                //cout << "AI Won!!" << endl;
                 return game.status;
             }
-            else if (x == FIELD_SIZE - 2 && game.ppField[y][x] == game.signHuman) {
+            else if (counterHuman == FIELD_SIZE && game.ppField[y][x] == game.signHuman) {
                 game.status = PAYER_WON;
-                //cout << "You Won!" << endl;
                 return game.status;;
             }
         }
 
     }
     
-
+    counterAI = 0;
+    counterHuman = 0;
+    int counter = 0;
     for (size_t y = 0; y < FIELD_SIZE; y++)
     {
         for (size_t x = 0; x < FIELD_SIZE; x++)
@@ -228,12 +292,29 @@ int checkStatus(TGame& game) {
                 return game.status;
             }
         }
-        
+        counter++;
+        if (counter == FIELD_SIZE) {
+            game.status = DRAW;
+            return game.status;
+        }
     }
-    game.status = DRAW;
-    return game.status;
+   
 }
+void requestNewGame(TGame& game) {
+    string respond;
+    printLegend(game);
 
+    cout << endl << "Wanna start new game? [yes/no]" << endl;
+    cin >> respond;
+    if (respond == "yes" || respond == "Yes" || respond == "y" || respond == "Y" || respond == "+") {
+        startGame(game);
+    }
+    else {
+        cout << "See you later!" << endl;
+        return;
+    }
+
+}
 
 void startGame(TGame& game){
     initGame(game);
@@ -260,27 +341,24 @@ void startGame(TGame& game){
         cout << "Draw..." << endl;
     }
 
-
     deinitGame(game);
-}
-void requestNewGame(TGame& game) {
-    string respond;
-    printLegend(game);
-    
-    cout << endl << "Wanna start neg game? [yes/no]" << endl;
-    cin >> respond;
-    if (respond == "yes" || respond == "Yes" || respond == "y" || respond == "Y") {
-        startGame(game);
-    }
-    else {
-        cout << "See you later!" << endl;
-    }
-
+    requestNewGame(game);
 }
 
+void selectGameMode(TGame& game) {
+    unsigned short mode = GM_EASY;
+    cout << endl << "Select game mode:" << endl;
+    cout << "1 - EASY mode" << endl;
+    cout << "2 - MEDIUM mode" << endl;
+    cout << "3 - HARD mode" << endl;
+    cin >> mode;
+    game.mode = mode;
+
+}
 int main()
 {
     TGame game;
+    selectGameMode(game);
     requestNewGame(game);
 
     return 0;
