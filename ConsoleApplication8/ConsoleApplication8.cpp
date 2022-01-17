@@ -353,8 +353,8 @@ void selectGameMode(TGame& game) {
     cout << "3 - HARD mode" << endl;
     cin >> mode;
     game.mode = mode;
-
 }
+
 int main()
 {
     TGame game;
